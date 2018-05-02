@@ -108,7 +108,6 @@ def get_Relations(stmt):
             col_list.append(rename)
         else:
             col_list.append(RelRef(str(t)))
-            print("hallo")
     return col_list
 
 
@@ -120,27 +119,21 @@ def get_AttrRef(attribute):
         return AttrRef(data[0].strip(), data[1].strip())
 
 def translate(stmt):
-    print(stmt)
     rel = get_Relations(stmt)
     tables = get_Tables(rel)
     list = get_Columns(stmt)
     select = get_restriction(tables,stmt)
     if list == None: # Columns
         if  select == None: # Restrictions
-            print("1")
             project = tables
         else:
-            print("2")
             project = select
     else:
         if select == None:
-            print("3")
             project = radb.ast.Project(list, tables)
         else:
-            print("4")
             project = radb.ast.Project(list, select)
     relAl = radb.parse.one_statement_from_string(str(project)+";")
-    print(str(relAl))
     return relAl
 
 
