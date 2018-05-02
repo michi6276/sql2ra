@@ -59,6 +59,39 @@ def get_Tables(relations):
             joined_relations = Cross(joined_relations, relations[i])
         return joined_relations
 
+def get_subSelect(token):
+    if not token.is_group:
+        return False
+    for item in token.tokens:
+        if item.ttype is DML and item.value.lower() == 'select':
+            return True
+    return False
+
+def get_from_rel(stmt):
+    from_seen = False
+    for token in stmt.tokens:
+        if from_seen:
+            if get_subSelect(token):
+                for x in get_from_rel(token):
+                    yield x
+            elif token.ttype is Keyword:
+                raise StopIteration
+            else:
+                yield token
+        elif token.ttype is Keyword and token.value.lower() == 'from':
+            from_seen = True
+
+def get_rel_ident(tokens):
+    list = []
+    for t in tokens:
+        if isinstance(t, IdentifierList):
+            for identifier in t.get_identifiers():
+                list.append(identifier)
+        elif isinstance(t, Identifier):
+            list.append(t)
+        elif t.ttype is Keyword:
+            list.append(t.value)
+    return list
 
 def get_Relations(stmt):
     #tables = stmt.token_next_by(i=sqlparse.sql.IdentifierList)
@@ -110,38 +143,6 @@ def translate(stmt):
     print(str(relAl))
     return relAl
 
-def get_subSelect(token):
-    if not token.is_group:
-        return False
-    for item in token.tokens:
-        if item.ttype is DML and item.value.lower() == 'select':
-            return True
-    return False
 
-def get_from_rel(stmt):
-    from_seen = False
-    for token in stmt.tokens:
-        if from_seen:
-            if get_subSelect(token):
-                for x in get_from_rel(token):
-                    yield x
-            elif token.ttype is Keyword:
-                raise StopIteration
-            else:
-                yield token
-        elif token.ttype is Keyword and token.value.lower() == 'from':
-            from_seen = True
-
-def get_rel_ident(tokens):
-    list = []
-    for t in tokens:
-        if isinstance(t, IdentifierList):
-            for identifier in t.get_identifiers():
-                list.append(identifier)
-        elif isinstance(t, Identifier):
-            list.append(t)
-        elif t.ttype is Keyword:
-            list.append(t.value)
-    return list
 
 translate(stmt)
