@@ -8,6 +8,7 @@ from radb.ast import *
 from radb.parse import RAParser as sym
 from sqlparse.sql import Where
 
+
 def get_Columns(stmt):
     attributes = None
     attr = []
@@ -24,7 +25,6 @@ def get_Columns(stmt):
                 attr.append(AttrRef(None, att[0]))
     else:
         attr = None
-
     return attr
 
 
@@ -63,9 +63,9 @@ def get_subSelect(token):
 
 
 def get_from_rel(stmt):
-    from_seen = False
+    check_from = False
     for token in stmt.tokens:
-        if from_seen:
+        if check_from:
             if get_subSelect(token):
                 for x in get_from_rel(token):
                     yield x
@@ -74,10 +74,10 @@ def get_from_rel(stmt):
             else:
                 yield token
         elif token.ttype is Keyword and token.value.lower() == 'from':
-            from_seen = True
+            check_from = True
 
 
-def get_rel_ident(tokens):
+def get_rel_id(tokens):
     list = []
     for t in tokens:
         if isinstance(t, IdentifierList):
@@ -91,15 +91,12 @@ def get_rel_ident(tokens):
 
 
 def get_Relations(stmt):
-    # tables = stmt.token_next_by(i=sqlparse.sql.IdentifierList)
-
     stream = get_from_rel(stmt)
-    tables = get_rel_ident(stream)
+    tables = get_rel_id(stream)
     col_list = []
     for t in tables:
         t = str(t).strip()
         if " " in t:
-
             relRef = RelRef(t.split(" ")[0])
             rename = Rename(t.split(" ")[1], None, relRef)
             col_list.append(rename)
@@ -133,4 +130,3 @@ def translate(stmt):
             project = radb.ast.Project(list, select)
     relAl = radb.parse.one_statement_from_string(str(project) + ";")
     return relAl
-
