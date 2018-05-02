@@ -15,7 +15,6 @@ def get_Columns(stmt):
     if "*" not in str(stmt):
         tokenlist = stmt.token_next_by(i=sqlparse.sql.TokenList)
         attributes = str(tokenlist[1])
-        attributes = str(stmt[4]).strip()  # anders machen
         attributes = attributes.split(",")
         for i in range(len(attributes)):
             att = str(attributes[i]).split(".")
