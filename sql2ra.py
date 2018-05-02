@@ -8,27 +8,18 @@ from radb.ast import *
 from radb.parse import RAParser as sym
 from sqlparse.sql import Where
 
-sql = """select distinct Person.name, pizzeria from Person, Eats, Serves
-                       where Person.name = Eats.name and Eats.pizza = Serves.pizza"""
-sql2 = "select distinct A.name, B.name from Eats A, Eats B where A.pizza = B.pizza and A.year = B.year"
-stmt = sqlparse.parse(sql)[0]
-stmt2 = sqlparse.parse(sql2)[0]
-tokenlist = stmt.token_next_by(i=sqlparse.sql.TokenList)
-identlist = stmt.token_next_by(i=sqlparse.sql.IdentifierList)
-
-
 def get_Columns(stmt):
     attributes = None
     attr = []
     if "*" not in str(stmt):
         tokenlist = stmt.token_next_by(i=sqlparse.sql.TokenList)
         attributes = str(tokenlist[1])
-        attributes = str(stmt[4]).strip() # anders machen
+        attributes = str(stmt[4]).strip()  # anders machen
         attributes = attributes.split(",")
         for i in range(len(attributes)):
             att = str(attributes[i]).split(".")
             if len(att) > 1:
-                attr.append(AttrRef(att[0],att[1]))
+                attr.append(AttrRef(att[0], att[1]))
             else:
                 attr.append(AttrRef(None, att[0]))
     else:
@@ -36,12 +27,13 @@ def get_Columns(stmt):
 
     return attr
 
+
 def get_restriction(relation, stmt):
     list = []
     restriction = stmt.token_next_by(i=sqlparse.sql.Where)
     restriction = str(restriction[1])
     if "where" in restriction:
-        restriction = restriction.replace("where","").strip()
+        restriction = restriction.replace("where", "").strip()
         res = restriction.split("and ")
         for r in res:
             rest = r.split("=")
@@ -49,15 +41,17 @@ def get_restriction(relation, stmt):
         condition = list[0]
         for i in range(1, len(list)):
             condition = ValExprBinaryOp(condition, sym.AND, list[i])
-        return Select(condition,relation)
+        return Select(condition, relation)
     else:
         return
 
+
 def get_Tables(relations):
-        joined_relations = relations[0]
-        for i in range(1, len(relations)):
-            joined_relations = Cross(joined_relations, relations[i])
-        return joined_relations
+    joined_relations = relations[0]
+    for i in range(1, len(relations)):
+        joined_relations = Cross(joined_relations, relations[i])
+    return joined_relations
+
 
 def get_subSelect(token):
     if not token.is_group:
@@ -66,6 +60,7 @@ def get_subSelect(token):
         if item.ttype is DML and item.value.lower() == 'select':
             return True
     return False
+
 
 def get_from_rel(stmt):
     from_seen = False
@@ -81,6 +76,7 @@ def get_from_rel(stmt):
         elif token.ttype is Keyword and token.value.lower() == 'from':
             from_seen = True
 
+
 def get_rel_ident(tokens):
     list = []
     for t in tokens:
@@ -93,8 +89,9 @@ def get_rel_ident(tokens):
             list.append(t.value)
     return list
 
+
 def get_Relations(stmt):
-    #tables = stmt.token_next_by(i=sqlparse.sql.IdentifierList)
+    # tables = stmt.token_next_by(i=sqlparse.sql.IdentifierList)
 
     stream = get_from_rel(stmt)
     tables = get_rel_ident(stream)
@@ -104,7 +101,7 @@ def get_Relations(stmt):
         if " " in t:
 
             relRef = RelRef(t.split(" ")[0])
-            rename = Rename(t.split(" ")[1],None, relRef)
+            rename = Rename(t.split(" ")[1], None, relRef)
             col_list.append(rename)
         else:
             col_list.append(RelRef(str(t)))
@@ -118,13 +115,14 @@ def get_AttrRef(attribute):
     elif len(data) > 1:
         return AttrRef(data[0].strip(), data[1].strip())
 
+
 def translate(stmt):
     rel = get_Relations(stmt)
     tables = get_Tables(rel)
     list = get_Columns(stmt)
-    select = get_restriction(tables,stmt)
-    if list == None: # Columns
-        if  select == None: # Restrictions
+    select = get_restriction(tables, stmt)
+    if list == None:  # Columns
+        if select == None:  # Restrictions
             project = tables
         else:
             project = select
@@ -133,9 +131,6 @@ def translate(stmt):
             project = radb.ast.Project(list, tables)
         else:
             project = radb.ast.Project(list, select)
-    relAl = radb.parse.one_statement_from_string(str(project)+";")
+    relAl = radb.parse.one_statement_from_string(str(project) + ";")
     return relAl
 
-
-
-translate(stmt)
