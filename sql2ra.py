@@ -10,7 +10,6 @@ from sqlparse.sql import Where
 
 
 def get_Columns(stmt):
-    attributes = None
     attr = []
     if "*" not in str(stmt):
         tokenlist = stmt.token_next_by(i=sqlparse.sql.TokenList)
@@ -30,10 +29,11 @@ def get_Columns(stmt):
 def get_restriction(relation, stmt):
     list = []
     restriction = stmt.token_next_by(i=sqlparse.sql.Where)
-    restriction = str(restriction[1])
-    if "where" in restriction:
+    restriction = restriction[1]
+    if restriction:
+        restriction = str(restriction)
         restriction = restriction.replace("where", "").strip()
-        res = restriction.split("and ")
+        res = restriction.split("and")
         for r in res:
             rest = r.split("=")
             list.append(ValExprBinaryOp(get_AttrRef(rest[0]), sym.EQ, get_AttrRef(rest[1])))
@@ -117,15 +117,20 @@ def translate(stmt):
     tables = get_Tables(rel)
     list = get_Columns(stmt)
     select = get_restriction(tables, stmt)
-    if list == None:  # Columns
-        if select == None:  # Restrictions
+    if not list:
+        if not select:
             project = tables
         else:
             project = select
     else:
-        if select == None:
+        if not select:
             project = radb.ast.Project(list, tables)
         else:
             project = radb.ast.Project(list, select)
     relAl = radb.parse.one_statement_from_string(str(project) + ";")
     return relAl
+
+sql = "select distinct Person.name from Person"
+stmt = sqlparse.parse(sql)[0]
+
+translate(stmt)
