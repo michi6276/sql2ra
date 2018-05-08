@@ -6,8 +6,6 @@ import radb.ast
 from sqlparse.tokens import Keyword, DML
 from radb.ast import *
 from radb.parse import RAParser as sym
-from sqlparse.sql import Where
-
 
 def get_columns(stmt):
     attr = []
@@ -36,7 +34,7 @@ def get_restriction(relation, stmt):
         res = restriction.split("and")
         for r in res:
             rest = r.split("=")
-            list.append(ValExprBinaryOp(get_attrRef(rest[0]), sym.EQ, get_attrRef(rest[1])))
+            list.append(ValExprBinaryOp(get_attr_ref(rest[0]), sym.EQ, get_attr_ref(rest[1])))
         condition = list[0]
         for i in range(1, len(list)):
             condition = ValExprBinaryOp(condition, sym.AND, list[i])
@@ -91,7 +89,7 @@ def get_relations(stmt):
     return col_list
 
 
-def get_attrRef(attribute):
+def get_attr_ref(attribute):
     data = attribute.split('.')
     if len(data) == 1:
         return AttrRef(None, attribute.strip())
@@ -102,18 +100,18 @@ def get_attrRef(attribute):
 def translate(stmt):
     rel = get_relations(stmt)
     tables = get_tables(rel)
-    list = get_columns(stmt)
+    col_list = get_columns(stmt)
     select = get_restriction(tables, stmt)
-    if not list:
+    if not col_list:
         if not select:
             project = tables
         else:
             project = select
     else:
         if not select:
-            project = radb.ast.Project(list, tables)
+            project = radb.ast.Project(col_list, tables)
         else:
-            project = radb.ast.Project(list, select)
+            project = radb.ast.Project(col_list, select)
     relAl = radb.parse.one_statement_from_string(str(project) + ";")
     return relAl
 
