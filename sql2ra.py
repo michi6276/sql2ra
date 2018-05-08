@@ -9,7 +9,7 @@ from radb.parse import RAParser as sym
 from sqlparse.sql import Where
 
 
-def get_Columns(stmt):
+def get_columns(stmt):
     attr = []
     if "*" not in str(stmt):
         tokenlist = stmt.token_next_by(i=sqlparse.sql.TokenList)
@@ -36,7 +36,7 @@ def get_restriction(relation, stmt):
         res = restriction.split("and")
         for r in res:
             rest = r.split("=")
-            list.append(ValExprBinaryOp(get_AttrRef(rest[0]), sym.EQ, get_AttrRef(rest[1])))
+            list.append(ValExprBinaryOp(get_attrRef(rest[0]), sym.EQ, get_attrRef(rest[1])))
         condition = list[0]
         for i in range(1, len(list)):
             condition = ValExprBinaryOp(condition, sym.AND, list[i])
@@ -45,7 +45,7 @@ def get_restriction(relation, stmt):
         return
 
 
-def get_Tables(relations):
+def get_tables(relations):
     joined_relations = relations[0]
     for i in range(1, len(relations)):
         joined_relations = Cross(joined_relations, relations[i])
@@ -54,11 +54,13 @@ def get_Tables(relations):
 
 def get_from_rel(stmt):
     check_from = False
+    list = []
     for token in stmt.tokens:
         if check_from:
-            yield token
+            list.append(token)
         elif token.ttype is Keyword and token.value.lower() == 'from':
             check_from = True
+    return list
 
 
 def get_rel_id(tokens):
@@ -74,7 +76,7 @@ def get_rel_id(tokens):
     return list
 
 
-def get_Relations(stmt):
+def get_relations(stmt):
     stream = get_from_rel(stmt)
     tables = get_rel_id(stream)
     col_list = []
@@ -89,7 +91,7 @@ def get_Relations(stmt):
     return col_list
 
 
-def get_AttrRef(attribute):
+def get_attrRef(attribute):
     data = attribute.split('.')
     if len(data) == 1:
         return AttrRef(None, attribute.strip())
@@ -98,9 +100,9 @@ def get_AttrRef(attribute):
 
 
 def translate(stmt):
-    rel = get_Relations(stmt)
-    tables = get_Tables(rel)
-    list = get_Columns(stmt)
+    rel = get_relations(stmt)
+    tables = get_tables(rel)
+    list = get_columns(stmt)
     select = get_restriction(tables, stmt)
     if not list:
         if not select:
