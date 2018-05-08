@@ -52,26 +52,11 @@ def get_Tables(relations):
     return joined_relations
 
 
-def get_subSelect(token):
-    if not token.is_group:
-        return False
-    for item in token.tokens:
-        if item.ttype is DML and item.value.lower() == 'select':
-            return True
-    return False
-
-
 def get_from_rel(stmt):
     check_from = False
     for token in stmt.tokens:
         if check_from:
-            if get_subSelect(token):
-                for x in get_from_rel(token):
-                    yield x
-            elif token.ttype is Keyword:
-                raise StopIteration
-            else:
-                yield token
+            yield token
         elif token.ttype is Keyword and token.value.lower() == 'from':
             check_from = True
 
