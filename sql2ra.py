@@ -45,10 +45,10 @@ def get_restriction(relation, stmt):
 
 
 def get_tables(relations):
-    joined_relations = relations[0]
+    all_relations = relations[0]
     for i in range(1, len(relations)):
-        joined_relations = Cross(joined_relations, relations[i])
-    return joined_relations
+        all_relations = Cross(all_relations, relations[i])
+    return all_relations
 
 
 def get_from_rel(stmt):
