@@ -7,6 +7,7 @@ from sqlparse.tokens import Keyword, DML
 from radb.ast import *
 from radb.parse import RAParser as sym
 
+
 def get_columns(stmt):
     attr = []
     if "*" not in str(stmt):
@@ -114,8 +115,3 @@ def translate(stmt):
             project = radb.ast.Project(col_list, select)
     relAl = radb.parse.one_statement_from_string(str(project) + ";")
     return relAl
-
-sql = "select distinct Person.name from Person"
-stmt = sqlparse.parse(sql)[0]
-
-translate(stmt)
